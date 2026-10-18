@@ -39,6 +39,7 @@ dependencies:
   # Storage / sharing / permissions / ids
   path_provider: ^2.1.6
   share_plus: ^13.3.1
+  file_picker: ^13.1.0
   permission_handler: ^13.0.2
   uuid: ^4.6.0
 

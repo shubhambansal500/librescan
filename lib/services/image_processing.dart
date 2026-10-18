@@ -19,10 +19,31 @@ import '../models/scan_filter.dart';
 class ImageProcessing {
   const ImageProcessing._();
 
+  /// Decodes [bytes] and bakes in any EXIF orientation (rotates/flips pixel
+  /// data to match it, then drops the tag) so every pixel-level operation
+  /// below works in the same upright orientation the user actually sees.
+  ///
+  /// `package:image`'s `decodeImage` does *not* do this on its own — it
+  /// leaves pixels exactly as stored and the orientation as a separate EXIF
+  /// tag. A phone camera's JPEG is almost always stored in the sensor's
+  /// native (landscape) pixel orientation with an EXIF tag saying "rotate
+  /// 90° for display" — meanwhile the crop screen displays the photo (and
+  /// lets the user place corners) via Flutter's `Image.file`/`dart:ui`,
+  /// which *does* apply EXIF rotation automatically. Without baking it here
+  /// too, every corner the user places in upright coordinates gets applied
+  /// to a differently-oriented raw pixel grid in [warpPerspective] — the
+  /// crop comes out rotated/misaligned. Confirmed as the cause of exactly
+  /// that symptom before fixing it this way.
+  static img.Image? _decodeUpright(Uint8List bytes) {
+    final decoded = img.decodeImage(bytes);
+    if (decoded == null) return null;
+    return img.bakeOrientation(decoded);
+  }
+
   /// Decodes [bytes] and returns its (width, height), or null if the bytes
   /// aren't a decodable image.
   static (int, int)? dimensionsOf(Uint8List bytes) {
-    final image = img.decodeImage(bytes);
+    final image = _decodeUpright(bytes);
     if (image == null) return null;
     return (image.width, image.height);
   }
@@ -50,7 +71,7 @@ class ImageProcessing {
   /// detection — it will not correct skew/perspective by itself. The crop
   /// screen always lets the user drag each corner afterward.
   static List<Offset> suggestCorners(Uint8List bytes) {
-    final decoded = img.decodeImage(bytes);
+    final decoded = _decodeUpright(bytes);
     if (decoded == null) {
       return const [Offset(0, 0), Offset(1, 0), Offset(1, 1), Offset(0, 1)];
     }
@@ -153,7 +174,7 @@ class ImageProcessing {
   /// bilinear-sample the source for every output pixel.
   static Uint8List warpPerspective(Uint8List sourceBytes, List<Offset> corners) {
     assert(corners.length == 4);
-    final source = img.decodeImage(sourceBytes);
+    final source = _decodeUpright(sourceBytes);
     if (source == null) {
       throw ArgumentError('warpPerspective: could not decode source image');
     }
@@ -293,7 +314,7 @@ class ImageProcessing {
 
   /// Applies [filter] to a decoded page image and re-encodes it as JPEG.
   static Uint8List applyFilter(Uint8List bytes, ScanFilter filter) {
-    final decoded = img.decodeImage(bytes);
+    final decoded = _decodeUpright(bytes);
     if (decoded == null) {
       throw ArgumentError('applyFilter: could not decode image');
     }

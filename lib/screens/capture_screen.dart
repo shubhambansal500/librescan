@@ -131,27 +131,32 @@ class _CaptureScreenState extends State<CaptureScreen> {
           return Stack(
             fit: StackFit.expand,
             children: [
+              // The preview itself stays full-bleed, edge to edge, behind
+              // the system nav bar — only the interactive shutter button
+              // needs to stay clear of it.
               _FullScreenCameraPreview(controller: controller),
-              Align(
-                alignment: Alignment.bottomCenter,
-                child: Padding(
-                  padding: const EdgeInsets.only(bottom: 32),
-                  child: GestureDetector(
-                    onTap: _capturing ? null : _capture,
-                    child: Container(
-                      width: 72,
-                      height: 72,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: Colors.white,
-                        border: Border.all(color: Colors.white54, width: 4),
+              SafeArea(
+                child: Align(
+                  alignment: Alignment.bottomCenter,
+                  child: Padding(
+                    padding: const EdgeInsets.only(bottom: 16),
+                    child: GestureDetector(
+                      onTap: _capturing ? null : _capture,
+                      child: Container(
+                        width: 72,
+                        height: 72,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: Colors.white,
+                          border: Border.all(color: Colors.white54, width: 4),
+                        ),
+                        child: _capturing
+                            ? const Padding(
+                                padding: EdgeInsets.all(20),
+                                child: CircularProgressIndicator(strokeWidth: 3),
+                              )
+                            : null,
                       ),
-                      child: _capturing
-                          ? const Padding(
-                              padding: EdgeInsets.all(20),
-                              child: CircularProgressIndicator(strokeWidth: 3),
-                            )
-                          : null,
                     ),
                   ),
                 ),

@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:printing/printing.dart';
 import 'package:provider/provider.dart';
@@ -85,6 +86,37 @@ class _DocumentViewerScreenState extends State<DocumentViewerScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Export failed: $e')),
+      );
+    } finally {
+      if (mounted) setState(() => _exporting = false);
+    }
+  }
+
+  /// Writes the PDF straight to wherever the user picks via the OS's native
+  /// save dialog (Downloads, a Files app folder, Drive, …), separate from
+  /// [_exportPdf]'s share-sheet flow — some targets (e.g. "keep a copy in
+  /// Downloads") aren't reliably reachable from a share sheet depending on
+  /// what's installed.
+  Future<void> _savePdf(ScanDocument document) async {
+    setState(() => _exporting = true);
+    try {
+      final bytes = await PdfExporter.buildImagePdf(document);
+      final savedUri = await FilePicker.saveFile(
+        fileName: '${document.title}.pdf',
+        bytes: bytes,
+        mimeType: 'application/pdf',
+        dialogTitle: 'Save PDF',
+      );
+      if (!mounted) return;
+      if (savedUri != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('PDF saved')),
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Save failed: $e')),
       );
     } finally {
       if (mounted) setState(() => _exporting = false);
@@ -188,17 +220,31 @@ class _DocumentViewerScreenState extends State<DocumentViewerScreen> {
               : SafeArea(
                   child: Padding(
                     padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
-                    child: Row(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
                       children: [
-                        Expanded(
-                          child: FilledButton.icon(
-                            onPressed: _exporting ? null : () => _exportPdf(document),
-                            icon: const Icon(Icons.picture_as_pdf_outlined),
-                            label: const Text('Share as PDF'),
-                          ),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: FilledButton.icon(
+                                onPressed: _exporting ? null : () => _savePdf(document),
+                                icon: const Icon(Icons.save_alt_outlined),
+                                label: const Text('Save PDF'),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: OutlinedButton.icon(
+                                onPressed: _exporting ? null : () => _exportPdf(document),
+                                icon: const Icon(Icons.ios_share_outlined),
+                                label: const Text('Share PDF'),
+                              ),
+                            ),
+                          ],
                         ),
-                        const SizedBox(width: 8),
-                        Expanded(
+                        const SizedBox(height: 8),
+                        SizedBox(
+                          width: double.infinity,
                           child: OutlinedButton.icon(
                             onPressed: _exporting ? null : () => _shareText(document),
                             icon: const Icon(Icons.text_snippet_outlined),
