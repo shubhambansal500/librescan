@@ -149,20 +149,6 @@ class _DocumentViewerScreenState extends State<DocumentViewerScreen> {
                 tooltip: 'Add page',
                 onPressed: () => _addPage(context, document),
               ),
-              PopupMenuButton<String>(
-                onSelected: (value) {
-                  switch (value) {
-                    case 'pdf':
-                      _exportPdf(document);
-                    case 'text':
-                      _shareText(document);
-                  }
-                },
-                itemBuilder: (context) => const [
-                  PopupMenuItem(value: 'pdf', child: Text('Export as PDF')),
-                  PopupMenuItem(value: 'text', child: Text('Share OCR text')),
-                ],
-              ),
             ],
           ),
           body: document.pages.isEmpty
@@ -176,7 +162,12 @@ class _DocumentViewerScreenState extends State<DocumentViewerScreen> {
                         onTap: () => _editPage(context, document, index),
                         child: InteractiveViewer(
                           child: Center(
-                            child: Image.file(File(document.pages[index].imagePath)),
+                            child: Image.file(
+                              File(document.pages[index].imagePath),
+                              key: ValueKey(
+                                '${document.pages[index].imagePath}#${document.pages[index].imageRevision}',
+                              ),
+                            ),
                           ),
                         ),
                       ),
@@ -189,6 +180,34 @@ class _DocumentViewerScreenState extends State<DocumentViewerScreen> {
                         ),
                       ),
                   ],
+                ),
+          // Export/share is the whole point of scanning something — put it
+          // where it's seen immediately, not behind a 3-dot menu.
+          bottomNavigationBar: document.pages.isEmpty
+              ? null
+              : SafeArea(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: FilledButton.icon(
+                            onPressed: _exporting ? null : () => _exportPdf(document),
+                            icon: const Icon(Icons.picture_as_pdf_outlined),
+                            label: const Text('Share as PDF'),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: OutlinedButton.icon(
+                            onPressed: _exporting ? null : () => _shareText(document),
+                            icon: const Icon(Icons.text_snippet_outlined),
+                            label: const Text('Share text'),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
         );
       },

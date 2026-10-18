@@ -18,6 +18,7 @@ class ScanPage {
     this.corners,
     this.filter = ScanFilter.original,
     this.ocrText,
+    this.imageRevision = 0,
     DateTime? createdAt,
   }) : createdAt = createdAt ?? DateTime.now();
 
@@ -25,6 +26,13 @@ class ScanPage {
   final String originalImagePath;
   String warpedImagePath;
   String imagePath;
+
+  /// Bumped every time [imagePath]'s bytes are rewritten in place (filter
+  /// change, re-crop, or re-saving into a document's canonical path) —
+  /// fold into any cache key for an `Image.file(File(imagePath))` showing
+  /// this page, since Flutter's FileImage cache is keyed by path alone and
+  /// won't notice the file's contents changed otherwise.
+  int imageRevision;
 
   /// The four crop corners last used, in source-image pixel coordinates,
   /// ordered top-left, top-right, bottom-right, bottom-left. Stored flat as
@@ -43,6 +51,7 @@ class ScanPage {
         'corners': corners,
         'filter': filter.name,
         'ocrText': ocrText,
+        'imageRevision': imageRevision,
         'createdAt': createdAt.toIso8601String(),
       };
 
@@ -57,6 +66,7 @@ class ScanPage {
           orElse: () => ScanFilter.original,
         ),
         ocrText: json['ocrText'] as String?,
+        imageRevision: (json['imageRevision'] as num?)?.toInt() ?? 0,
         createdAt: DateTime.parse(json['createdAt'] as String),
       );
 }

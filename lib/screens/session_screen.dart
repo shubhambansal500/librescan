@@ -5,6 +5,7 @@ import '../services/document_library.dart';
 import '../services/document_session.dart';
 import '../widgets/page_thumb.dart';
 import 'capture_screen.dart';
+import 'document_viewer_screen.dart';
 import 'page_detail_screen.dart';
 
 /// The in-progress multi-page document: shows every page captured so far,
@@ -61,10 +62,18 @@ class _SessionScreenState extends State<SessionScreen> {
     setState(() => _saving = true);
     try {
       final library = context.read<DocumentLibrary>();
-      await library.commitSession(session.pages, title.trim());
+      final document = await library.commitSession(session.pages, title.trim());
       session.clear();
       if (!context.mounted) return;
+      // Land on the share/export screen for what was just scanned, rather
+      // than silently dropping back to the library — exporting/sharing is
+      // the reason someone scans something.
       Navigator.of(context).popUntil((route) => route.isFirst);
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => DocumentViewerScreen(documentId: document.id),
+        ),
+      );
     } catch (e) {
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -144,6 +153,7 @@ class _SessionScreenState extends State<SessionScreen> {
                         width: 86,
                         child: PageThumb(
                           imagePath: page.imagePath,
+                          cacheBust: page.imageRevision,
                           onTap: () => _editPage(context, page.id),
                         ),
                       ),

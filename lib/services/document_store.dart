@@ -6,6 +6,7 @@ import 'package:uuid/uuid.dart';
 
 import '../models/scan_document.dart';
 import '../models/scan_page.dart';
+import '../utils/image_file_cache.dart';
 
 const _uuid = Uuid();
 
@@ -101,6 +102,11 @@ class DocumentStore {
     Future<String> relocate(String src, String dst) async {
       if (src == dst) return dst;
       await File(src).copy(dst);
+      // dst (the document's canonical page path) is reused across edits —
+      // a page that's already been saved and then re-filtered/re-cropped
+      // copies back onto the same dst each time. Without evicting, any
+      // Image.file already showing that path keeps the pre-edit bytes.
+      await evictImageFileCache(dst);
       return dst;
     }
 
@@ -120,6 +126,7 @@ class DocumentStore {
       corners: page.corners,
       filter: page.filter,
       ocrText: page.ocrText,
+      imageRevision: page.imageRevision + 1,
       createdAt: page.createdAt,
     );
   }

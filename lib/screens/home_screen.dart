@@ -105,6 +105,7 @@ class HomeScreen extends StatelessWidget {
                     Expanded(
                       child: PageThumb(
                         imagePath: document.pages.first.imagePath,
+                        cacheBust: document.pages.first.imageRevision,
                         onTap: () => Navigator.of(context).push(
                           MaterialPageRoute(
                             builder: (_) => DocumentViewerScreen(documentId: document.id),

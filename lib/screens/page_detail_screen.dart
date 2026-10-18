@@ -6,6 +6,7 @@ import '../models/scan_filter.dart';
 import '../models/scan_page.dart';
 import '../services/image_processing.dart';
 import '../services/ocr_service.dart';
+import '../utils/image_file_cache.dart';
 import 'crop_screen.dart';
 
 /// Per-page editing: pick a filter, re-run the crop, run OCR and view/copy
@@ -51,7 +52,14 @@ class _PageDetailScreenState extends State<PageDetailScreen> {
       // Overwrite the page's current rendered image in place; warpedImagePath
       // (the unfiltered base) is left untouched so filters stay reversible.
       await File(_page.imagePath).writeAsBytes(filtered, flush: true);
-      setState(() => _page.filter = filter);
+      // Flutter's FileImage cache is keyed by path, not contents — without
+      // this, every Image.file for this path (here and any thumbnail
+      // elsewhere) keeps showing the pre-filter bytes.
+      await evictImageFileCache(_page.imagePath);
+      setState(() {
+        _page.filter = filter;
+        _page.imageRevision++;
+      });
       await widget.onUpdated(_page);
     } catch (e) {
       if (!mounted) return;
@@ -87,6 +95,7 @@ class _PageDetailScreenState extends State<PageDetailScreen> {
           rawImagePath: _page.originalImagePath,
           existingPageId: _page.id,
           initialCorners: _page.corners,
+          previousImageRevision: _page.imageRevision,
           onPageReady: (updated) async {
             // A re-crop resets the filter to Original: it re-derives a
             // fresh warpedImagePath, and any previous filtered render no
@@ -119,7 +128,10 @@ class _PageDetailScreenState extends State<PageDetailScreen> {
           Expanded(
             child: InteractiveViewer(
               child: Center(
-                child: Image.file(File(_page.imagePath), key: ValueKey(_page.imagePath)),
+                child: Image.file(
+                  File(_page.imagePath),
+                  key: ValueKey('${_page.imagePath}#${_page.imageRevision}'),
+                ),
               ),
             ),
           ),

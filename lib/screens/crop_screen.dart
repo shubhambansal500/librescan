@@ -6,6 +6,7 @@ import 'package:uuid/uuid.dart';
 
 import '../models/scan_page.dart';
 import '../services/image_processing.dart';
+import '../utils/image_file_cache.dart';
 import '../widgets/corner_overlay.dart';
 
 const _uuid = Uuid();
@@ -25,6 +26,7 @@ class CropScreen extends StatefulWidget {
     required this.onPageReady,
     this.existingPageId,
     this.initialCorners,
+    this.previousImageRevision = 0,
   });
 
   /// Path to the untouched source photo — always the original capture, even
@@ -37,6 +39,14 @@ class CropScreen extends StatefulWidget {
   /// same id rather than becoming a new page).
   final String? existingPageId;
   final List<double>? initialCorners;
+
+  /// The page's `imageRevision` before this (re-)crop, when re-cropping an
+  /// existing page. The new warped file reuses that page's exact file path,
+  /// so the result needs a revision strictly greater than it — otherwise
+  /// two re-crops in a row (with no filter in between to bump it) would
+  /// produce the same cache-busting key twice and the second one's preview
+  /// wouldn't visibly update. See ScanPage.imageRevision.
+  final int previousImageRevision;
 
   @override
   State<CropScreen> createState() => _CropScreenState();
@@ -96,6 +106,9 @@ class _CropScreenState extends State<CropScreen> {
       final tempDir = Directory.systemTemp;
       final warpedPath = '${tempDir.path}/librescan_${pageId}_warped.jpg';
       await File(warpedPath).writeAsBytes(warped, flush: true);
+      // Redoing a crop on an existing page reuses this same path; without
+      // evicting, Image.file keeps showing the pre-recrop bytes.
+      await evictImageFileCache(warpedPath);
 
       final page = ScanPage(
         id: pageId,
@@ -103,6 +116,7 @@ class _CropScreenState extends State<CropScreen> {
         warpedImagePath: warpedPath,
         imagePath: warpedPath,
         corners: _corners.expand((o) => [o.dx, o.dy]).toList(),
+        imageRevision: widget.previousImageRevision + 1,
       );
 
       await widget.onPageReady(page);

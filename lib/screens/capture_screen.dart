@@ -131,7 +131,7 @@ class _CaptureScreenState extends State<CaptureScreen> {
           return Stack(
             fit: StackFit.expand,
             children: [
-              CameraPreview(controller),
+              _FullScreenCameraPreview(controller: controller),
               Align(
                 alignment: Alignment.bottomCenter,
                 child: Padding(
@@ -160,6 +160,39 @@ class _CaptureScreenState extends State<CaptureScreen> {
           );
         },
       ),
+    );
+  }
+}
+
+/// Fills the available space with the camera feed, cropping (not
+/// stretching) to match the screen's aspect ratio — the standard fix for
+/// [CameraPreview] otherwise rendering squashed/stretched, since its native
+/// aspect ratio is the camera sensor's (commonly ~4:3) and essentially never
+/// matches the phone screen's.
+class _FullScreenCameraPreview extends StatelessWidget {
+  const _FullScreenCameraPreview({required this.controller});
+
+  final CameraController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final size = constraints.biggest;
+        var scale = size.aspectRatio * controller.value.aspectRatio;
+        if (scale < 1) scale = 1 / scale;
+        return ClipRect(
+          child: Transform.scale(
+            scale: scale,
+            child: Center(
+              child: AspectRatio(
+                aspectRatio: controller.value.aspectRatio,
+                child: CameraPreview(controller),
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 }
