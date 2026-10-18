@@ -1,0 +1,68 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  analyze_and_test:
+    name: Analyze & test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+      - run: flutter pub get
+      - run: flutter analyze
+      - run: flutter test
+
+  android:
+    name: Build Android APK
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+      # Android's SDK platform packages have moved to dotted version IDs
+      # (android-37.0, 37.1, ...), but compileSdk 37 (a plain integer, set
+      # in android/app/build.gradle.kts because permission_handler_android
+      # requires it) looks for a literal `android-37` folder, which no
+      # package installs. See README "Known build gotcha: compileSdk 37
+      # platform lookup" for the full explanation; this aliases it the same
+      # way that was verified to work locally.
+      - name: Install Android SDK platform 37.0 and alias it to android-37
+        run: |
+          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --sdk_root="$ANDROID_HOME" "platforms;android-37.0" "build-tools;36.0.0"
+          cd "$ANDROID_HOME/platforms"
+          if [ ! -e android-37 ]; then
+            cp -r android-37.0 android-37
+            sed -i 's/AndroidVersion.ApiLevel=37.0/AndroidVersion.ApiLevel=37/' android-37/source.properties
+          fi
+      - run: flutter pub get
+      - run: flutter build apk --release
+      - uses: actions/upload-artifact@v4
+        with:
+          name: app-release-apk
+          path: build/app/outputs/flutter-apk/app-release.apk
+
+  ios:
+    name: Build iOS (no codesign)
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+      - run: flutter pub get
+      # No Apple signing identity in CI — this verifies the Dart and native
+      # (Swift/Objective-C, CocoaPods) code actually compiles for iOS
+      # without producing a distributable, signed .ipa.
+      - run: flutter build ios --release --no-codesign

@@ -1,5 +1,7 @@
 # LibreScan
 
+[![CI](https://github.com/shubhambansal500/librescan/actions/workflows/ci.yml/badge.svg)](https://github.com/shubhambansal500/librescan/actions/workflows/ci.yml)
+
 A free, open-source, offline document scanner for Android and iOS — capture,
 crop, enhance and OCR documents from your phone's camera, then export to PDF
 or text. No account, no cloud sync, no ads, no analytics. MIT licensed, free
