@@ -26,8 +26,12 @@ dependencies:
   pdf: ^3.13.1
   printing: ^5.15.1
 
-  # On-device, fully offline OCR (wraps Tesseract natively; no network calls)
-  flutter_tesseract_ocr: ^0.4.31
+  # On-device, fully offline OCR (wraps Tesseract natively; no network calls).
+  # Vendored + patched under third_party/ — see README.md "Vendored dependencies":
+  # pub.dev's published 0.5.0 build.gradle calls the removed jcenter() method and
+  # fails to build on current Gradle/AGP.
+  tesseract_ocr:
+    path: third_party/tesseract_ocr_patched
 
   # State management
   provider: ^6.1.5

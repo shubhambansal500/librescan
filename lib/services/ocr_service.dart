@@ -1,4 +1,5 @@
-import 'package:flutter_tesseract_ocr/flutter_tesseract_ocr.dart';
+import 'package:tesseract_ocr/ocr_engine_config.dart';
+import 'package:tesseract_ocr/tesseract_ocr.dart';
 
 /// Thin wrapper around the bundled, fully offline Tesseract OCR engine.
 ///
@@ -16,13 +17,9 @@ class OcrService {
     String imagePath, {
     String language = 'eng',
   }) async {
-    final text = await FlutterTesseractOcr.extractText(
+    final text = await TesseractOcr.extractText(
       imagePath,
-      language: language,
-      args: {
-        'psm': '4', // assume a single column of text of variable sizes
-        'preserve_interword_spaces': '1',
-      },
+      config: OCRConfig(language: language, engine: OCREngine.tesseract),
     );
     return text.trim();
   }

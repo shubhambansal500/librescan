@@ -6,7 +6,10 @@ plugins {
 
 android {
     namespace = "com.librescan.librescan"
-    compileSdk = flutter.compileSdkVersion
+    // Pinned to 37 (rather than flutter.compileSdkVersion, currently 36):
+    // permission_handler_android requires compileSdk 37+. Safe to raise —
+    // compileSdk is backward compatible with lower minSdk/targetSdk.
+    compileSdk = 37
     ndkVersion = flutter.ndkVersion
 
     compileOptions {

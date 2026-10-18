@@ -68,6 +68,33 @@ flutter analyze   # static analysis
 flutter test       # unit tests for the crop/filter/OCR math in image_processing.dart
 ```
 
+## Vendored dependencies
+
+`third_party/tesseract_ocr_patched/` is a vendored, patched copy of the
+[`tesseract_ocr`](https://pub.dev/packages/tesseract_ocr) package (BSD-3,
+original license preserved in that folder). Its published 0.5.0 release
+fails to build on current Gradle/AGP for two independent reasons — both
+found and fixed by actually building this project, not guessed at:
+
+- `android/build.gradle` called the removed `jcenter()` repository method
+  (removed; the one native dependency it pulls in, `tesseract4android`,
+  already resolves from the `jitpack.io` repo listed alongside it), and
+  separately declared its own `buildscript { classpath '...gradle:8.2.1' }`
+  (removed; the root project's `settings.gradle.kts` already supplies AGP/
+  Kotlin to every module — this stale, pre-centralized-plugin-management
+  block was pulling in a second, unresolvable copy of AGP's whole dependency
+  graph). Also pinned a consistent Java/Kotlin JVM target (17), needed once
+  the above was fixed.
+- The package shipped both a real, working `TesseractOcrPlugin.java` (the
+  actual `TessBaseAPI` glue) *and* a stale, non-functional Kotlin plugin-
+  template stub declaring the same class — a leftover from an unfinished
+  Java→Kotlin migration, and a straight compile error (`Redeclaration`) with
+  both present. The stub is deleted; the working Java file is untouched.
+
+If upstream publishes a fixed release, switch `pubspec.yaml`'s
+`tesseract_ocr` entry back to a normal hosted version constraint and delete
+this folder.
+
 ## Adding OCR languages
 
 1. Download the language's `.traineddata` file from
@@ -97,8 +124,13 @@ Every screen that edits a page takes plain callbacks (`onUpdated`,
 so the same screens work whether a page belongs to an in-progress session or
 an already-saved document.
 
-No network permissions are requested anywhere in the app, and nothing in
-`lib/` performs HTTP/socket I/O — everything is local file and camera access.
+Nothing in `lib/` performs HTTP/socket I/O — everything is local file and
+camera access. The release build requests no network permission at all
+(verified with `aapt dump badging` on a real `flutter build apk --release`
+output: just `CAMERA`, `READ_EXTERNAL_STORAGE`, and a capped legacy
+`WRITE_EXTERNAL_STORAGE`). A *debug* build does show `INTERNET` — that's
+Flutter's own tooling adding it for hot reload/DevTools, not anything this
+app does; it disappears in release builds.
 
 ## Roadmap
 
