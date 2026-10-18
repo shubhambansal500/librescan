@@ -68,6 +68,28 @@ flutter analyze   # static analysis
 flutter test       # unit tests for the crop/filter/OCR math in image_processing.dart
 ```
 
+## Known build gotcha: `compileSdk 37` platform lookup
+
+If `flutter build apk` fails with `Failed to find target with hash string
+'android-37' in: <sdk>` even after `sdkmanager` reports `platforms;android-37.0`
+installed: Android's SDK platform packages have moved to dotted version IDs
+(`android-37.0`, `37.1`, ...), but a plain integer `compileSdk 37` (set in
+`android/app/build.gradle.kts` — needed because `permission_handler_android`
+requires SDK 37+) looks for a literal `android-37` folder, which no package
+currently installs. Confirmed by actually hitting this while building the
+project. Fix: make a local alias so the SDK has what the lookup expects —
+
+```bash
+cd "$ANDROID_HOME/platforms"
+cp -r android-37.0 android-37
+sed -i '' 's/AndroidVersion.ApiLevel=37.0/AndroidVersion.ApiLevel=37/' android-37/source.properties
+```
+
+This is a local SDK-installation workaround, not a repo file, so every
+machine that builds this project needs it until Google ships a plain
+`platforms;android-37` package (or `permission_handler_android` caps its
+own requirement back down).
+
 ## Vendored dependencies
 
 `third_party/tesseract_ocr_patched/` is a vendored, patched copy of the
