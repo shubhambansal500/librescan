@@ -60,7 +60,7 @@ Build release artifacts:
 
 ```bash
 flutter build apk --release     # Android
-flutter build ios --release     # iOS (needs Xcode + a signing team)
+./scripts/fetch-ios-ocr-framework.sh && flutter build ios --release   # iOS (needs Xcode + a signing team; see "iOS OCR framework" below)
 ```
 
 ### Verifying without a device
@@ -91,6 +91,26 @@ This is a local SDK-installation workaround, not a repo file, so every
 machine that builds this project needs it until Google ships a plain
 `platforms;android-37` package (or `permission_handler_android` caps its
 own requirement back down).
+
+## iOS OCR framework
+
+`tesseract_ocr`'s iOS side wraps [SwiftyTesseract](https://github.com/SwiftyTesseract/SwiftyTesseract)
+4.x, which depends on a binary `libtesseract.xcframework` (Apache-2.0,
+~210MB unpacked) that isn't published to the public CocoaPods trunk and is
+too large to vendor in this repo. Before `pod install` / `flutter build ios`
+can succeed, fetch it once:
+
+```bash
+./scripts/fetch-ios-ocr-framework.sh
+```
+
+This downloads [libtesseract 0.2.0](https://github.com/SwiftyTesseract/libtesseract/releases/tag/0.2.0)
+and places it at `third_party/tesseract_ocr_patched/ios/libtesseract.xcframework`
+(gitignored), which is where that package's `libtesseract.podspec` expects
+it. `ios/Podfile` already declares the two extra pods
+(`SwiftyTesseract401`, `libtesseract`) this needs, per the vendored
+package's own `CUSTOM_PODS_README.md`. CI runs this same script before its
+iOS build job — see `.github/workflows/ci.yml`.
 
 ## Vendored dependencies
 

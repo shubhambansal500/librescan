@@ -62,6 +62,9 @@ jobs:
         with:
           channel: stable
       - run: flutter pub get
+      # tesseract_ocr's iOS pod needs a real libtesseract.xcframework on
+      # disk (~210MB; not committed to git). See README "iOS OCR framework".
+      - run: ./scripts/fetch-ios-ocr-framework.sh
       # No Apple signing identity in CI — this verifies the Dart and native
       # (Swift/Objective-C, CocoaPods) code actually compiles for iOS
       # without producing a distributable, signed .ipa.

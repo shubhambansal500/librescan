@@ -46,3 +46,6 @@ app.*.map.json
 
 # Widget Preview related
 .widget_preview/
+
+# Fetched by scripts/fetch-ios-ocr-framework.sh — large binary, not vendored
+third_party/tesseract_ocr_patched/ios/libtesseract.xcframework/
