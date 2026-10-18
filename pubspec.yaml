@@ -1,0 +1,50 @@
+name: librescan
+description: >
+  LibreScan — a free, open-source, offline document scanner for mobile.
+  Capture, crop, enhance, OCR, and export documents to PDF/text. No account,
+  no cloud, no ads, no tracking.
+publish_to: "none"
+version: 0.1.0
+
+environment:
+  sdk: ">=3.4.0 <4.0.0"
+  flutter: ">=3.22.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^2.0.0
+
+  # Camera capture
+  camera: ^0.12.1
+
+  # Pure-Dart image processing (no native/FFI build risk): perspective warp,
+  # grayscale/threshold filters, Sobel-based edge hints.
+  image: ^4.12.0
+
+  # PDF generation + print/share preview
+  pdf: ^3.13.1
+  printing: ^5.15.1
+
+  # On-device, fully offline OCR (wraps Tesseract natively; no network calls)
+  flutter_tesseract_ocr: ^0.4.31
+
+  # State management
+  provider: ^6.1.5
+
+  # Storage / sharing / permissions / ids
+  path_provider: ^2.1.6
+  share_plus: ^13.3.1
+  permission_handler: ^13.0.2
+  uuid: ^4.6.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/tessdata/
+    - assets/tessdata_config.json
