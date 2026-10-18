@@ -154,6 +154,48 @@ output: just `CAMERA`, `READ_EXTERNAL_STORAGE`, and a capped legacy
 Flutter's own tooling adding it for hot reload/DevTools, not anything this
 app does; it disappears in release builds.
 
+## App icon
+
+The launcher icon source lives in `assets/icon/` (`icon_master.png` for iOS
+and Android's legacy icon, `icon_foreground.png` for Android's adaptive
+icon, paired with the `#3949AB` background set in `pubspec.yaml`). Regenerate
+every platform icon file from those two sources with:
+
+```bash
+dart run flutter_launcher_icons
+```
+
+Edit the source PNGs (or swap in your own) and re-run that command rather
+than hand-editing anything under `android/.../mipmap-*` or
+`ios/.../AppIcon.appiconset` — those are generated output.
+
+## Release signing
+
+Release builds are signed with the debug key until you generate a real
+upload keystore — fine for sideloading, not for publishing. To set one up:
+
+```bash
+cd android
+keytool -genkeypair -v -keystore upload-keystore.jks \
+  -keyalg RSA -keysize 2048 -validity 10000 -alias upload
+cat > key.properties <<EOF
+storePassword=<the password you just set>
+keyPassword=<the same password>
+keyAlias=upload
+storeFile=upload-keystore.jks
+EOF
+```
+
+`android/key.properties` and `android/*.jks` are gitignored — never commit
+either. Back the `.jks` file and its password up somewhere durable (a
+password manager, not just this machine) before you ever publish: losing it
+means you can never ship an update to the same app listing again. Once both
+files exist, `flutter build apk --release` (or `--release` of any kind)
+automatically signs with them instead of the debug key — no other change
+needed. `android/app/build.gradle.kts` falls back to debug signing
+automatically when `key.properties` is absent, so the repo stays buildable
+for anyone who clones it without your key.
+
 ## Roadmap
 
 - Swap `ImageProcessing.suggestCorners`'s heuristic for a real contour-based

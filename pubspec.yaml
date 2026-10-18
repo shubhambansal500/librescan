@@ -46,9 +46,20 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^6.0.0
+  flutter_launcher_icons: ^0.14.4
 
 flutter:
   uses-material-design: true
   assets:
     - assets/tessdata/
     - assets/tessdata_config.json
+
+# Run `dart run flutter_launcher_icons` after changing anything here to
+# regenerate android/ and ios/ icon assets.
+flutter_launcher_icons:
+  image_path: "assets/icon/icon_master.png"
+  android: true
+  adaptive_icon_background: "#3949AB"
+  adaptive_icon_foreground: "assets/icon/icon_foreground.png"
+  ios: true
+  remove_alpha_ios: true
