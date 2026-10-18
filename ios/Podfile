@@ -43,8 +43,11 @@ target 'Runner' do
   # directory, i.e. third_party/tesseract_ocr_patched/ios/libtesseract.xcframework
   # — fetched by scripts/fetch-ios-ocr-framework.sh (~210MB, not committed
   # to git; see README.md "iOS OCR framework").
-  pod 'SwiftyTesseract401', :path => '../.symlinks/plugins/tesseract_ocr/ios'
-  pod 'libtesseract', :path => '../.symlinks/plugins/tesseract_ocr/ios'
+  # Note: .symlinks/ lives directly inside ios/, alongside this Podfile — no
+  # leading ../ (the vendored package's own CUSTOM_PODS_README.md example
+  # paths are off by one level; confirmed by actually running pod install).
+  pod 'SwiftyTesseract401', :path => '.symlinks/plugins/tesseract_ocr/ios'
+  pod 'libtesseract', :path => '.symlinks/plugins/tesseract_ocr/ios'
 
   flutter_install_all_ios_pods File.dirname(File.realpath(__FILE__))
   target 'RunnerTests' do
