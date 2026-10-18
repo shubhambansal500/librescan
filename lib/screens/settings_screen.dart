@@ -12,7 +12,8 @@ class SettingsScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('About LibreScan')),
       body: ListView(
-        padding: const EdgeInsets.all(16),
+        // Extra bottom padding: Android draws edge-to-edge by default now.
+        padding: EdgeInsets.fromLTRB(16, 16, 16, 16 + MediaQuery.paddingOf(context).bottom),
         children: [
           Text(
             'LibreScan is a free, open-source document scanner.',

@@ -123,8 +123,13 @@ class _PageDetailScreenState extends State<PageDetailScreen> {
           ),
         ],
       ),
-      body: Column(
-        children: [
+      // Android (targeting SDK 35+) draws edge-to-edge by default now — a
+      // Scaffold body is no longer automatically padded clear of the system
+      // nav bar, so fixed bottom controls need an explicit SafeArea or they
+      // render partly behind it.
+      body: SafeArea(
+        child: Column(
+          children: [
           Expanded(
             child: InteractiveViewer(
               child: Center(
@@ -190,7 +195,8 @@ class _PageDetailScreenState extends State<PageDetailScreen> {
                 ),
               ),
             ),
-        ],
+          ],
+        ),
       ),
     );
   }

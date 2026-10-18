@@ -149,40 +149,45 @@ class _CropScreenState extends State<CropScreen> {
           ),
         ],
       ),
-      body: _error != null
-          ? Center(child: Padding(padding: const EdgeInsets.all(24), child: Text(_error!)))
-          : _decoded == null
-              ? const Center(child: CircularProgressIndicator())
-              : Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    children: [
-                      const Text('Drag the corners to match the page edges.'),
-                      const SizedBox(height: 12),
-                      Expanded(
-                        child: Stack(
-                          fit: StackFit.expand,
-                          children: [
-                            Positioned.fill(
-                              child: Image.file(
-                                File(widget.rawImagePath),
-                                fit: BoxFit.contain,
+      // Android (targeting SDK 35+) draws edge-to-edge by default now — the
+      // bottom corner handles need an explicit SafeArea or they render
+      // partly behind the system nav bar.
+      body: SafeArea(
+        child: _error != null
+            ? Center(child: Padding(padding: const EdgeInsets.all(24), child: Text(_error!)))
+            : _decoded == null
+                ? const Center(child: CircularProgressIndicator())
+                : Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      children: [
+                        const Text('Drag the corners to match the page edges.'),
+                        const SizedBox(height: 12),
+                        Expanded(
+                          child: Stack(
+                            fit: StackFit.expand,
+                            children: [
+                              Positioned.fill(
+                                child: Image.file(
+                                  File(widget.rawImagePath),
+                                  fit: BoxFit.contain,
+                                ),
                               ),
-                            ),
-                            CornerOverlay(
-                              imageSize: Size(
-                                _decoded!.width.toDouble(),
-                                _decoded!.height.toDouble(),
+                              CornerOverlay(
+                                imageSize: Size(
+                                  _decoded!.width.toDouble(),
+                                  _decoded!.height.toDouble(),
+                                ),
+                                initialCorners: _corners,
+                                onChanged: (corners) => _corners = corners,
                               ),
-                              initialCorners: _corners,
-                              onChanged: (corners) => _corners = corners,
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
+      ),
     );
   }
 }

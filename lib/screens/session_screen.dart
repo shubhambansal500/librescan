@@ -136,7 +136,14 @@ class _SessionScreenState extends State<SessionScreen> {
             return const Center(child: Text('No pages yet. Tap + to scan one.'));
           }
           return ReorderableListView.builder(
-            padding: const EdgeInsets.all(12),
+            // Extra bottom padding: Android draws edge-to-edge by default
+            // now, and the FAB sits over the last item otherwise.
+            padding: EdgeInsets.fromLTRB(
+              12,
+              12,
+              12,
+              12 + MediaQuery.paddingOf(context).bottom + 72,
+            ),
             itemCount: session.pageCount,
             // ignore: deprecated_member_use
             onReorder: session.reorder,

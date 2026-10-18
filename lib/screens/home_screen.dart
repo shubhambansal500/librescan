@@ -87,7 +87,14 @@ class HomeScreen extends StatelessWidget {
             );
           }
           return GridView.builder(
-            padding: const EdgeInsets.all(12),
+            // Extra bottom padding: Android draws edge-to-edge by default
+            // now, and the FAB sits over the last row otherwise.
+            padding: EdgeInsets.fromLTRB(
+              12,
+              12,
+              12,
+              12 + MediaQuery.paddingOf(context).bottom + 72,
+            ),
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 3,
               mainAxisSpacing: 12,
