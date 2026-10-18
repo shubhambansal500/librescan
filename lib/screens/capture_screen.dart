@@ -165,10 +165,22 @@ class _CaptureScreenState extends State<CaptureScreen> {
 }
 
 /// Fills the available space with the camera feed, cropping (not
-/// stretching) to match the screen's aspect ratio — the standard fix for
-/// [CameraPreview] otherwise rendering squashed/stretched, since its native
-/// aspect ratio is the camera sensor's (commonly ~4:3) and essentially never
-/// matches the phone screen's.
+/// stretching) to match the screen's aspect ratio.
+///
+/// [CameraPreview] already sizes and rotates itself correctly on its own —
+/// its `build()` wraps its texture in the right `AspectRatio` (inverted for
+/// portrait) and a `RotatedBox` for the current device orientation. The
+/// first version of this widget wrapped `CameraPreview` in a *second*,
+/// independently-computed `AspectRatio` to drive the fill/crop math — under
+/// `Stack(fit: StackFit.expand)`'s tight constraints that outer wrapper has
+/// no freedom to size itself by ratio, so it degenerated to the exact
+/// screen box and forced `CameraPreview`'s texture to stretch to match,
+/// which is what actually caused the distortion. Fixed by giving
+/// `CameraPreview` only `Center`'s *loose* constraints — so its own correct
+/// internal sizing genuinely applies — and using a separately-estimated
+/// ratio purely as a `Transform.scale` multiplier, which can only ever
+/// zoom uniformly and so can't introduce stretching even if the estimate
+/// is imperfect.
 class _FullScreenCameraPreview extends StatelessWidget {
   const _FullScreenCameraPreview({required this.controller});
 
@@ -179,17 +191,16 @@ class _FullScreenCameraPreview extends StatelessWidget {
     return LayoutBuilder(
       builder: (context, constraints) {
         final size = constraints.biggest;
-        var scale = size.aspectRatio * controller.value.aspectRatio;
+        // This screen is locked to portrait (see main.dart), so
+        // CameraPreview's own internal logic uses 1/aspectRatio — matching
+        // that here only affects how much we zoom, not correctness.
+        final estimatedPreviewRatio = 1 / controller.value.aspectRatio;
+        var scale = size.aspectRatio / estimatedPreviewRatio;
         if (scale < 1) scale = 1 / scale;
         return ClipRect(
           child: Transform.scale(
             scale: scale,
-            child: Center(
-              child: AspectRatio(
-                aspectRatio: controller.value.aspectRatio,
-                child: CameraPreview(controller),
-              ),
-            ),
+            child: Center(child: CameraPreview(controller)),
           ),
         );
       },

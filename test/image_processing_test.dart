@@ -139,5 +139,30 @@ void main() {
       expect(sampled.g, anyOf(0, 255));
       expect(sampled.b, anyOf(0, 255));
     });
+
+    test(
+      'enhanced keeps dark (text-like) pixels dark instead of washing them to white',
+      () {
+        // Regression test: adjustColor's contrast pushes dark pixels
+        // negative at these settings, and raising a negative number to a
+        // non-integer gamma power is NaN in Dart — which `.clamp(0.0, 1.0)`
+        // silently resolves to 1.0 (white), wiping out all "text". Enhanced
+        // must not use a `gamma` parameter for this reason (see
+        // ImageProcessing.applyFilter's ScanFilter.enhanced case).
+        final bytes = _buildTestImage(width: 120, height: 160);
+        final out = ImageProcessing.applyFilter(bytes, ScanFilter.enhanced);
+        final decoded = img.decodeImage(out)!;
+        // Center of the dark rectangle from _buildTestImage.
+        final center = decoded.getPixel(decoded.width ~/ 2, decoded.height ~/ 2);
+        expect(
+          center.luminance,
+          lessThan(60),
+          reason: 'a dark source pixel must stay dark after "Enhanced", not wash out to white',
+        );
+        // Background should still read as (close to) white.
+        final corner = decoded.getPixel(2, 2);
+        expect(corner.luminance, greaterThan(200));
+      },
+    );
   });
 }

@@ -304,11 +304,22 @@ class ImageProcessing {
       case ScanFilter.grayscale:
         return img.encodeJpg(img.grayscale(decoded), quality: 92);
       case ScanFilter.enhanced:
+        // Boosts contrast/brightness on the original *color* image — unlike
+        // Grayscale/Black & white, this keeps color, just cleans up uneven
+        // lighting by pushing the page background toward white and ink
+        // toward black.
+        //
+        // Deliberately no `gamma` here: adjustColor applies it via
+        // `pow(value, gamma)` *after* contrast, and contrast alone already
+        // pushes dark (text) pixels negative at these settings — raising a
+        // negative number to a non-integer power is NaN in Dart, and
+        // `NaN.clamp(0.0, 1.0)` evaluates to 1.0 (white). That silently
+        // wiped out every dark pixel, i.e. all the text — confirmed by
+        // reproducing the exact LUT math standalone before fixing it here.
         final enhanced = img.adjustColor(
-          img.grayscale(img.Image.from(decoded)),
+          img.Image.from(decoded),
           contrast: 1.35,
           brightness: 1.08,
-          gamma: 1.05,
         );
         return img.encodeJpg(enhanced, quality: 92);
       case ScanFilter.blackAndWhite:

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 import 'screens/home_screen.dart';
@@ -8,6 +9,15 @@ import 'services/document_store.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  // Locked to portrait: the capture screen's full-screen camera preview
+  // (see capture_screen.dart's _FullScreenCameraPreview) estimates its
+  // crop/zoom using the portrait-specific aspect ratio CameraPreview itself
+  // uses internally; a document scanner also has little reason to support
+  // landscape in the first place.
+  await SystemChrome.setPreferredOrientations([
+    DeviceOrientation.portraitUp,
+    DeviceOrientation.portraitDown,
+  ]);
   final store = await DocumentStore.instance();
   runApp(LibreScanApp(store: store));
 }
